@@ -52,25 +52,26 @@ Core structure:
 
 ## Prerequisites
 
-Before starting GhostSpectrum, make sure the following are available on your machine:
-
-- Node.js 18+
-- npm
-- Electron runtime
-- Ollama (optional, for local AI)
-- ADB / Fastboot / Heimdall (optional, for Android tooling)
-
-Quick system check:
+Quick setup for a fresh machine:
 
 ```bash
+# Node.js 18+ and npm
 node -v
 npm -v
-node -p "require('electron/package.json').version || 'Electron not installed'"
-command -v ollama || echo "Ollama not installed"
+
+# Electron runtime
+npm install --save-dev electron
+
+# Optional: local AI
+command -v ollama || echo "Install Ollama: https://ollama.com/download"
+
+# Optional: Android tools
 command -v adb || echo "ADB not installed"
 command -v fastboot || echo "Fastboot not installed"
 command -v heimdall || echo "Heimdall not installed"
 ```
+
+If any of the optional tools are missing, GhostSpectrum will still run in base mode, but local AI and Android workflow features may be limited.
 
 ---
 
