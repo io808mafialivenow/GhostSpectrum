@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GhostSpectrum</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app" class="hud-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <span class="brand-name">GHOSTSPECTRUM</span>
+          <span class="brand-subtitle">SYSTEM // HUD // SENSOR GRID</span>
+        </div>
+        <div id="title" class="brand-title"></div>
+        <div id="clock" class="live-clock"></div>
+      </header>
+
+      <main class="dashboard-grid">
+        <section class="panel large-panel">
+          <div class="panel-header">
+            <span>CORE SYSTEM</span>
+            <span class="status-dot" aria-label="Online status"></span>
+          </div>
+          <div class="panel-body">
+            <div class="stat-row">
+              <span>CPU</span>
+              <strong id="metric-cpu">--</strong>
+            </div>
+            <div class="stat-row">
+              <span>RAM</span>
+              <strong id="metric-ram">--</strong>
+            </div>
+            <div class="stat-row">
+              <span>NETWORK</span>
+              <strong id="metric-network">--</strong>
+            </div>
+            <div class="stat-row">
+              <span>UPTIME</span>
+              <strong id="metric-uptime">--</strong>
+            </div>
+            <div class="stat-row">
+              <span>THERMAL</span>
+              <strong id="metric-temp">--</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel terminal-panel">
+          <div class="panel-header">
+            <span>TERMINAL // /ghost</span>
+            <span class="mini-tag">PTY LIVE</span>
+          </div>
+          <div class="terminal-screen">
+            <div class="terminal-line">ghost@system:~$ boot diagnostics</div>
+            <div class="terminal-line green">[OK] bootloader synchronized</div>
+            <div class="terminal-line green">[OK] telemetry mesh online</div>
+            <div class="terminal-line green">[OK] node-pty binding initialized</div>
+            <div class="terminal-line cyan">waiting for command input...</div>
+          </div>
+        </section>
+
+        <section class="panel right-panel">
+          <div class="panel-header">
+            <span>OPS MODULES</span>
+          </div>
+          <div class="module-list">
+            <div class="module-item"><span>USB-HID</span><span>READY</span></div>
+            <div class="module-item"><span>ANDROID 16+</span><span>SYNC</span></div>
+            <div class="module-item"><span>HEIMDALL</span><span>ACTIVE</span></div>
+            <div class="module-item"><span>ADB/FASTBOOT</span><span>LIVE</span></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>

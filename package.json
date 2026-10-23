@@ -1,0 +1,31 @@
+{
+  "name": "ghostspectrum",
+  "version": "0.1.0",
+  "description": "GhostSpectrum – a modernized, feature-extended fork of eDEX-UI for sci-fi terminal operations and hardware workflows.",
+  "main": "src/_boot.js",
+  "scripts": {
+    "start": "electron . --nointro",
+    "dev": "electron . --nointro --inspect",
+    "rebuild:pty": "electron-rebuild -f -w node-pty",
+    "package:linux": "electron-builder --linux AppImage deb",
+    "package:mac": "electron-builder --mac dmg",
+    "package:win": "electron-builder --win nsis portable"
+  },
+  "license": "GPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/io808mafialivenow/GhostSpectrum.git"
+  },
+  "author": "GhostSpectrum Team",
+  "dependencies": {
+    "node-pty": "^1.0.0",
+    "xterm": "^5.5.0",
+    "xterm-addon-fit": "^0.8.0",
+    "xterm-addon-web-links": "^0.11.0"
+  },
+  "devDependencies": {
+    "electron": "^36.0.0",
+    "electron-builder": "^25.0.0",
+    "electron-rebuild": "^3.1.0"
+  }
+}
