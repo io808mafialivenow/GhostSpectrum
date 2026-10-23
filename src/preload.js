@@ -1,8 +1,9 @@
-const { contextBridge } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('ghost', {
-  appName: 'GhostSpectrum',
-  version: '0.1.0',
-  platform: process.platform,
-  arch: process.arch
+contextBridge.exposeInMainWorld('ghostAPI', {
+  onTerminalOutput: (callback) => ipcRenderer.on('terminal-output', (e, data) => callback(data)),
+  sendTerminalInput: (data) => ipcRenderer.send('terminal-input', data),
+  resizeTerminal: (cols, rows) => ipcRenderer.send('terminal-resize', { cols, rows }),
+  onTelemetry: (callback) => ipcRenderer.on('hud-telemetry', (e, data) => callback(data)),
+  runToolkit: (action, payload) => ipcRenderer.invoke('run-toolkit-action', action, payload)
 });
