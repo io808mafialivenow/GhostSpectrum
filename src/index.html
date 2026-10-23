@@ -1,81 +1,234 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GhostSpectrum</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <div id="app" class="hud-shell">
-      <header class="topbar">
-        <div class="brand-block">
-          <span class="brand-name">GHOSTSPECTRUM</span>
-          <span class="brand-subtitle">SYSTEM // HUD // SENSOR GRID</span>
-        </div>
-        <div id="title" class="brand-title"></div>
-        <div id="clock" class="live-clock"></div>
-      </header>
+<head>
+  <meta charset="UTF-8">
+  <title>GhostSpectrum System HUD</title>
+  <link rel="stylesheet" href="../node_modules/xterm/css/xterm.css" />
+  <style>
+    :root {
+      --hud-glow: #00ffcc;
+      --hud-dim: rgba(0, 255, 204, 0.2);
+      --hud-bg: rgba(5, 10, 15, 0.85);
+      --hud-border: #00ffcc66;
+      --hud-alert: #ff3366;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
+    body {
+      background: var(--hud-bg);
+      color: var(--hud-glow);
+      height: 100vh;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: 50px 1fr 35px;
+      grid-template-columns: 320px 1fr 320px;
+      border: 2px solid var(--hud-glow);
+      box-shadow: inset 0 0 25px var(--hud-dim);
+    }
+    header {
+      grid-column: 1 / 4;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--hud-border);
+      background: rgba(0, 20, 30, 0.9);
+      letter-spacing: 2px;
+      font-weight: bold;
+    }
+    aside {
+      border-right: 1px solid var(--hud-border);
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      background: rgba(0, 10, 15, 0.5);
+      overflow-y: auto;
+    }
+    aside.right {
+      border-right: none;
+      border-left: 1px solid var(--hud-border);
+    }
+    main {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    #terminal-container {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid var(--hud-border);
+    }
+    footer {
+      grid-column: 1 / 4;
+      border-top: 1px solid var(--hud-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      font-size: 12px;
+      background: rgba(0, 20, 30, 0.9);
+    }
+    .panel-box {
+      border: 1px solid var(--hud-border);
+      padding: 10px;
+      background: rgba(0, 255, 204, 0.03);
+    }
+    .panel-box h3 {
+      font-size: 13px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      border-bottom: 1px dashed var(--hud-border);
+      padding-bottom: 4px;
+    }
+    button {
+      background: transparent;
+      border: 1px solid var(--hud-glow);
+      color: var(--hud-glow);
+      padding: 6px 10px;
+      cursor: pointer;
+      text-transform: uppercase;
+      font-size: 11px;
+      margin-top: 5px;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: var(--hud-glow);
+      color: #000;
+      box-shadow: 0 0 10px var(--hud-glow);
+    }
+    textarea {
+      width: 100%;
+      height: 80px;
+      background: #000;
+      border: 1px solid var(--hud-border);
+      color: var(--hud-glow);
+      padding: 5px;
+      font-size: 11px;
+      resize: none;
+    }
+    .metric-bar {
+      height: 8px;
+      border: 1px solid var(--hud-glow);
+      margin-top: 4px;
+      background: #000;
+      position: relative;
+    }
+    .metric-fill {
+      height: 100%;
+      background: var(--hud-glow);
+      width: 0%;
+      transition: width 0.3s;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>⚡ GHOSTSPECTRUM // SYSTEM HUD v1.0.0</div>
+    <div id="status-clock">STATUS: SECURE // ONLINE</div>
+  </header>
 
-      <main class="dashboard-grid">
-        <section class="panel large-panel">
-          <div class="panel-header">
-            <span>CORE SYSTEM</span>
-            <span class="status-dot" aria-label="Online status"></span>
-          </div>
-          <div class="panel-body">
-            <div class="stat-row">
-              <span>CPU</span>
-              <strong id="metric-cpu">--</strong>
-            </div>
-            <div class="stat-row">
-              <span>RAM</span>
-              <strong id="metric-ram">--</strong>
-            </div>
-            <div class="stat-row">
-              <span>NETWORK</span>
-              <strong id="metric-network">--</strong>
-            </div>
-            <div class="stat-row">
-              <span>UPTIME</span>
-              <strong id="metric-uptime">--</strong>
-            </div>
-            <div class="stat-row">
-              <span>THERMAL</span>
-              <strong id="metric-temp">--</strong>
-            </div>
-          </div>
-        </section>
-
-        <section class="panel terminal-panel">
-          <div class="panel-header">
-            <span>TERMINAL // /ghost</span>
-            <span class="mini-tag">PTY LIVE</span>
-          </div>
-          <div class="terminal-screen">
-            <div class="terminal-line">ghost@system:~$ boot diagnostics</div>
-            <div class="terminal-line green">[OK] bootloader synchronized</div>
-            <div class="terminal-line green">[OK] telemetry mesh online</div>
-            <div class="terminal-line green">[OK] node-pty binding initialized</div>
-            <div class="terminal-line cyan">waiting for command input...</div>
-          </div>
-        </section>
-
-        <section class="panel right-panel">
-          <div class="panel-header">
-            <span>OPS MODULES</span>
-          </div>
-          <div class="module-list">
-            <div class="module-item"><span>USB-HID</span><span>READY</span></div>
-            <div class="module-item"><span>ANDROID 16+</span><span>SYNC</span></div>
-            <div class="module-item"><span>HEIMDALL</span><span>ACTIVE</span></div>
-            <div class="module-item"><span>ADB/FASTBOOT</span><span>LIVE</span></div>
-          </div>
-        </section>
-      </main>
+  <!-- Left Sidebar: Telemetry & Android 16+ Platform Tools -->
+  <aside>
+    <div class="panel-box">
+      <h3>Telemetry Matrix</h3>
+      <div style="font-size: 12px; margin-top: 5px;">CPU Load: <span id="cpu-val">0.0</span>%</div>
+      <div class="metric-bar"><div id="cpu-fill" class="metric-fill"></div></div>
+      <div style="font-size: 12px; margin-top: 8px;">Memory Usage: <span id="mem-val">0.0</span>%</div>
+      <div class="metric-bar"><div id="mem-fill" class="metric-fill"></div></div>
     </div>
 
-    <script src="renderer.js"></script>
-  </body>
+    <div class="panel-box">
+      <h3>Android 16+ Toolchain</h3>
+      <button onclick="runTool('adb-devices')">Scan ADB Bridge</button>
+      <button onclick="runTool('fastboot-devices')">Scan Fastboot Target</button>
+    </div>
+
+    <div class="panel-box">
+      <h3>Repair Subsystems</h3>
+      <button onclick="runTool('heimdall-detect')">Heimdall Target Detect</button>
+    </div>
+  </aside>
+
+  <!-- Center: Terminal Core -->
+  <main>
+    <div id="terminal-container"></div>
+  </main>
+
+  <!-- Right Sidebar: USB-HID / Rubber Ducky Payload Injector -->
+  <aside class="right">
+    <div class="panel-box">
+      <h3>Rubber Ducky Macro Injector</h3>
+      <textarea id="ducky-script" placeholder="REM GhostSpectrum Payload&#10;DELAY 500&#10;STRING echo 'Injected!'"></textarea>
+      <button onclick="injectDucky()">Simulate Injection</button>
+    </div>
+
+    <div class="panel-box" style="flex: 1; display: flex; flex-direction: column;">
+      <h3>Subsystem Log</h3>
+      <pre id="subsystem-log" style="flex: 1; background: #000; border: 1px solid var(--hud-border); padding: 5px; font-size: 10px; overflow-y: auto; margin-top: 5px; color: #00ffccaa;"></pre>
+    </div>
+  </aside>
+
+  <footer>
+    <div>UPSTREAM: eDEX-UI (GPL-3.0)</div>
+    <div>ACTIVE SHELL: PTY SECURE BOUND</div>
+  </footer>
+
+  <script src="../node_modules/xterm/lib/xterm.js"></script>
+  <script src="../node_modules/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
+  <script>
+    // Initialize XTerm
+    const term = new Terminal({
+      cursorBlink: true,
+      theme: {
+        background: '#00000000',
+        foreground: '#00ffcc',
+        cursor: '#00ffcc'
+      }
+    });
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(document.getElementById('terminal-container'));
+    fitAddon.fit();
+
+    window.addEventListener('resize', () => fitAddon.fit());
+
+    term.onData(data => {
+      window.ghostAPI.sendTerminalInput(data);
+    });
+
+    window.ghostAPI.onTerminalOutput(data => {
+      term.write(data);
+    });
+
+    // Telemetry updates
+    window.ghostAPI.onTelemetry(data => {
+      document.getElementById('cpu-val').innerText = data.cpu;
+      document.getElementById('cpu-fill').style.width = data.cpu + '%';
+      document.getElementById('mem-val').innerText = data.memory;
+      document.getElementById('mem-fill').style.width = data.memory + '%';
+    });
+
+    async function runTool(action) {
+      logMsg(`> Executing ${action}...`);
+      const res = await window.ghostAPI.runToolkit(action);
+      logMsg(res.output);
+    }
+
+    async function injectDucky() {
+      const script = document.getElementById('ducky-script').value;
+      logMsg(`> Simulating Rubber Ducky script...`);
+      const res = await window.ghostAPI.runToolkit('ducky-inject', script);
+      logMsg(res.output);
+    }
+
+    function logMsg(msg) {
+      const log = document.getElementById('subsystem-log');
+      log.innerText += msg + '\n';
+      log.scrollTop = log.scrollHeight;
+    }
+  </script>
+</body>
 </html>
