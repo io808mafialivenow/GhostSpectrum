@@ -7,6 +7,25 @@ const { exec } = require('child_process');
 
 let mainWindow;
 let ptyProcess = null;
+let ptyBuffer = [];
+let flushTimeout = null;
+let telemetryInterval = null;
+
+function sendBufferedPty(webContents, data) {
+  if (!webContents || webContents.isDestroyed()) return;
+
+  ptyBuffer.push(data);
+
+  if (flushTimeout) return;
+
+  flushTimeout = setTimeout(() => {
+    if (webContents && !webContents.isDestroyed() && ptyBuffer.length > 0) {
+      webContents.send('terminal-output', ptyBuffer.join(''));
+      ptyBuffer = [];
+    }
+    flushTimeout = null;
+  }, 50);
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -24,6 +43,18 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
+  mainWindow.on('closed', () => {
+    if (telemetryInterval) {
+      clearInterval(telemetryInterval);
+      telemetryInterval = null;
+    }
+    if (ptyProcess) {
+      ptyProcess.kill();
+      ptyProcess = null;
+    }
+    mainWindow = null;
+  });
+
   // Open DevTools in debug mode if requested
   if (process.argv.includes('--debug')) {
     mainWindow.webContents.openDevTools();
@@ -33,9 +64,20 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
 
+  ipcMain.on('toggle-cloak', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    if (mainWindow.isVisible()) mainWindow.hide();
+    else mainWindow.show();
+  });
+
+  ipcMain.on('toggle-fullscreen', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.setFullScreen(!mainWindow.isFullScreen());
+  });
+
   // Setup PTY Terminal Session
   const shell = process.env.SHELL || (os.platform() === 'win32' ? 'powershell.exe' : 'bash');
-  
+
   try {
     ptyProcess = pty.spawn(shell, [], {
       name: 'xterm-256color',
@@ -47,7 +89,7 @@ app.whenReady().then(() => {
 
     ptyProcess.onData((data) => {
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('terminal-output', data);
+        sendBufferedPty(mainWindow.webContents, data);
       }
     });
   } catch (err) {
@@ -70,23 +112,28 @@ app.whenReady().then(() => {
     }
   });
 
-  // Telemetry poll loop
-  setInterval(async () => {
+  // Telemetry poll loop — throttle to 2s and run system probes concurrently.
+  telemetryInterval = setInterval(async () => {
     try {
-      const cpu = await si.currentLoad();
-      const mem = await si.mem();
-      const net = await si.networkStats();
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('hud-telemetry', {
-          cpu: cpu.currentLoad.toFixed(1),
-          memory: ((mem.used / mem.total) * 100).toFixed(1),
-          network: net[0] ? { rx: net[0].rx_sec, tx: net[0].tx_sec } : { rx: 0, tx: 0 }
-        });
-      }
+      if (!mainWindow || mainWindow.isDestroyed()) return;
+
+      const [load, mem, net] = await Promise.all([
+        si.currentLoad(),
+        si.mem(),
+        si.networkStats()
+      ]);
+
+      const telemetry = {
+        cpu: load.currentLoad.toFixed(1),
+        memory: ((mem.used / mem.total) * 100).toFixed(1),
+        network: net[0] ? { rx: net[0].rx_sec, tx: net[0].tx_sec } : { rx: 0, tx: 0 }
+      };
+
+      mainWindow.webContents.send('hud-telemetry', telemetry);
     } catch (e) {
-      // Ignore poll dropouts
+      // Ignore poll dropouts.
     }
-  }, 1000);
+  }, 2000);
 
   // USB-HID / Android / Heimdall Toolkit Handlers
   ipcMain.handle('run-toolkit-action', async (event, actionType, payload) => {
@@ -96,7 +143,6 @@ app.whenReady().then(() => {
       else if (actionType === 'fastboot-devices') cmd = 'fastboot devices';
       else if (actionType === 'heimdall-detect') cmd = 'heimdall detect';
       else if (actionType === 'ducky-inject') {
-        // Simulated injection sandbox test
         return resolve({ success: true, output: `[RUBBER-DUCKY] Payload simulated successfully (${payload.length} chars).` });
       } else {
         return resolve({ success: false, output: 'Unknown toolkit action requested.' });
@@ -119,5 +165,6 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (ptyProcess) ptyProcess.kill();
+  if (telemetryInterval) clearInterval(telemetryInterval);
   if (process.platform !== 'darwin') app.quit();
 });
